@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIV8 Smart Dialer</title>
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f4f8;
+            transition: background-color 0.5s ease;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            width: 100%;
+            padding: 10px 20px;
+            background: linear-gradient(90deg, #0fd3c9, #5c9ded);
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-nav .logo {
+            font-size: 1.5rem;
+        }
+
+        .top-nav .theme-toggle {
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            transition: color 0.3s;
+        }
+
+        .top-nav .theme-toggle:hover {
+            color: #dfe6f1;
+        }
+
+        /* Main Dialer Container */
+        .dialer-container {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: background-color 0.5s ease, box-shadow 0.3s ease;
+            position: relative;
+            flex: 1;
+        }
+
+        /* Caller Summary Section */
+        .caller-summary {
+            background: #f7fafc;
+            padding: 15px;
+            border-bottom: 2px solid #0fd3c9;
+            text-align: center;
+            position: relative;
+        }
+
+        .caller-summary p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .caller-summary .report {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .caller-summary .buttons {
+            margin-top: 10px;
+        }
+
+        .caller-summary .buttons button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            border: none;
+            background: #5c9ded;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.3s;
+        }
+
+        .caller-summary .buttons button:hover {
+            background: #0fd3c9;
+        }
+
+        /* Pop-up Styles */
+        .popup {
+            display: none;
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            z-index: 2000;
+            width: 300px;
+        }
+
+        .popup h2 {
+            margin-top: 0;
+        }
+
+        .popup .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .popup .chat {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .popup .chat p {
+            margin: 5px 0;
+            padding: 8px 12px;
+            border-radius: 20px;
+            background: #f7fafc;
+            display: inline-block;
+        }
+
+        .popup .chat p.agent {
+            background: #5c9ded;
+            color: white;
+            text-align: right;
+        }
+
+        .popup .chat p.ai {
+            background: #eee;
+            color: #333;
+        }
+
+        .popup input {
+            width: calc(100% - 40px);
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
+        .popup input[type="submit"] {
+            width: auto;
+            background: #0fd3c9;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 10px;
+            float: right;
+        }
+
+        /* Dialer Section */
+        .dialer-section {
+            padding: 20px;
+        }
+
+        /* Dialer Header */
+        .dialer-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .dialer-header img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+
+        .dialer-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+        .dialer-header p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Dialer Modes */
+        .dialer-modes {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .dialer-modes button {
+            flex: 1;
+            padding: 10px;
+            margin: 0 5px;
+            border: none;
+            background: #0fd3c9;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .dialer-modes button:active {
+            transform: scale(0.95);
+        }
+
+        .dialer-modes button:hover {
+            background: #5c9ded;
+        }
+
+        /* Number Input */
+        .number-input {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .number-input input {
+            font-size: 1.8rem;
+            padding: 10px;
+            width: 90%;
+            border: 2px solid #0fd3c9;
+            border-radius: 10px;
+            text-align: center;
+            color: #333;
+        }
+
+        /* Dial Button with Dropdown */
+        .dial-button {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .dial-button button {
+            padding: 15px 30px;
+            border: none;
+            background: linear-gradient(90deg, #0fd3c9, #5c9ded);
+            color: white;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .dial-button button:active {
+            transform: scale(0.95);
+        }
+
+        .dial-button button:hover {
+            background: linear-gradient(90deg, #5c9ded, #0fd3c9);
+        }
+
+        .dial-options {
+            display: none;
+            position: absolute;
+            top: 60px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            z-index: 100;
+        }
+
+        .dial-options ul {
+            list-style: none;
+            padding: 10px;
+            margin: 0;
+        }
+
+        .dial-options li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background 0.3s;
+        }
+
+        .dial-options li:last-child {
+            border-bottom: none;
+        }
+
+        .dial-options li:hover {
+            background: #f7fafc;
+        }
+
+        /* Call Controls */
+        .call-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .call-controls button {
+            flex: 1;
+            padding: 10px;
+            margin: 0 5px;
+            border: none;
+            background: #5c9ded;
+            color: white;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .call-controls button.active {
+            background: #ff8a00;
+        }
+
+        .call-controls button:active {
+            transform: scale(0.95);
+        }
+
+        .call-controls button:hover {
+            background: #0fd3c9;
+        }
+
+        /* Chatbot AI Support */
+        .chatbot-widget {
+            position: absolute;
+            bottom: 140px;
+            right: 10px;
+            background: #5c9ded;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .chatbot-widget:hover {
+            background: #0fd3c9;
+            transform: scale(1.1);
+        }
+
+        /* Dark Theme Styles */
+        .dark-theme body {
+            background-color: #121212;
+            color: white;
+        }
+
+        .dark-theme .dialer-container {
+            background-color: #1f1f1f;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .dark-theme .number-input input {
+            background-color: #333;
+            border-color: #5c9ded;
+            color: white;
+        }
+
+        .dark-theme .dialer-modes button,
+        .dark-theme .call-controls button,
+        .dark-theme .dial-button button {
+            background: linear-gradient(90deg, #5c9ded, #0fd3c9);
+        }
+
+        .dark-theme .dialer-modes button:hover,
+        .dark-theme .call-controls button:hover,
+        .dark-theme .dial-button button:hover {
+            background: linear-gradient(90deg, #0fd3c9, #5c9ded);
+        }
+
+        .dark-theme .dial-options {
+            background-color: #333;
+            border-color: #444;
+        }
+
+        .dark-theme .dial-options li {
+            color: white;
+            border-color: #555;
+        }
+
+        .dark-theme .dial-options li:hover {
+            background: #444;
+        }
+
+        .dark-theme .caller-summary p,
+        .dark-theme .dialer-header h3,
+        .dark-theme .dialer-header p {
+            color: white;
+        }
+
+        /* Settings Button */
+        .settings-button {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: #5c9ded;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .settings-button:hover {
+            background: #0fd3c9;
+            transform: scale(1.1);
+        }
+
+        /* Settings Pop-up */
+        .settings-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            z-index: 2000;
+        }
+
+        .settings-popup h2 {
+            margin-top: 0;
+        }
+
+        .settings-popup .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .settings-popup label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .settings-popup input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        /* Dial Pad */
+        .dial-pad {
+            display: none;
+            position: fixed;
+            bottom: 60px;
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .dial-pad .key {
+            width: 80px;
+            height: 80px;
+            background: #5c9ded;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border-radius: 50%;
+            margin: 10px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .dial-pad .key:hover {
+            background: #0fd3c9;
+        }
+
+        .dial-pad .key:active {
+            transform: scale(0.95);
+        }
+
+        /* Bottom Navigation Menu */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 400px;
+            background: #f7fafc;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .bottom-nav .nav-item {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.3s;
+        }
+
+        .bottom-nav .nav-item.active {
+            color: #0fd3c9;
+        }
+
+        .bottom-nav .nav-item:hover {
+            color: #5c9ded;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <div class="top-nav">
+        <div class="logo">LIV8 Smart Dialer</div>
+        <button class="theme-toggle">Dark Mode</button>
+    </div>
+
+    <!-- Dialer Container -->
+    <div class="dialer-container">
+
+        <!-- Caller Summary -->
+        <div class="caller-summary">
+            <p>Calling: <strong>+1 415-732-7547</strong></p>
+            <p>Acme Inc.</p>
+            <p class="report">Recent interactions: 5 calls, last contact 2 days ago</p>
+            <div class="buttons">
+                <button id="scriptButton">Script</button>
+                <button id="dispositionButton">Disposition</button>
+            </div>
+            <div class="settings-button" id="settingsButton">
+                ⚙️
+            </div>
+        </div>
+
+        <!-- Dialer Header -->
+        <div class="dialer-header">
+            <img src="https://via.placeholder.com/80" alt="Agent Photo">
+            <h3>Leo Garcia</h3>
+            <p>+1 415-732-7547</p>
+            <p>Acme Inc.</p>
+        </div>
+
+        <!-- Dialer Modes -->
+        <div class="dialer-section">
+            <div class="dialer-modes">
+                <button>Power Dialer</button>
+                <button>Normal Dialer</button>
+                <button>Voicemail Drop</button>
+            </div>
+
+            <!-- Number Input -->
+            <div class="number-input">
+                <input type="text" placeholder="Enter Number">
+            </div>
+
+            <!-- Dial Button with Dropdown -->
+            <div class="dial-button">
+                <button id="dialButton">Dial</button>
+                <div class="dial-options" id="dialOptions">
+                    <ul>
+                        <li>Web Dial</li>
+                        <li>Google Voice</li>
+                        <li>Forward Call</li>
+                        <li>Telnyx</li>
+                        <li>Vonage</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Call Controls -->
+            <div class="call-controls">
+                <button id="muteButton">Mute</button>
+                <button id="holdButton">Hold</button>
+                <button id="transferButton">Transfer</button>
+                <button id="recButton">Rec</button>
+            </div>
+
+        </div>
+
+        <!-- Chatbot Widget -->
+        <div class="chatbot-widget" id="chatbotWidget">
+            🤖
+        </div    <!-- Dial Pad -->
+    <div class="dial-pad" id="dialPad">
+        <div class="key">1</div>
+        <div class="key">2</div>
+        <div class="key">3</div>
+        <div class="key">4</div>
+        <div class="key">5</div>
+        <div class="key">6</div>
+        <div class="key">7</div>
+        <div class="key">8</div>
+        <div class="key">9</div>
+        <div class="key">0</div>
+        <div class="key">*</div>
+        <div class="key">#</div>
+    </div>
+
+    <!-- Bottom Navigation Menu -->
+    <div class="bottom-nav">
+        <div class="nav-item active" id="dialerTab">Dialer</div>
+        <div class="nav-item" id="smartPanelTab">Smart Panel</div>
+        <div class="nav-item" id="contactsTab">Contacts</div>
+        <div class="nav-item" id="multiChannelTab">Multi-Channel</div>
+    </div>
+
+</div>
+
+<!-- Script Pop-up -->
+<div class="popup" id="scriptPopup">
+    <span class="close" id="closeScriptPopup">&times;</span>
+    <h2>Sales Script</h2>
+    <p>[Insert Sales Script Here]</p>
+</div>
+
+<!-- Disposition Pop-up -->
+<div class="popup" id="dispositionPopup">
+    <span class="close" id="closeDispositionPopup">&times;</span>
+    <h2>Disposition</h2>
+    <p>[Insert Disposition Form or Summary Here]</p>
+</div>
+
+<!-- Settings Pop-up -->
+<div class="settings-popup" id="settingsPopup">
+    <span class="close" id="closeSettingsPopup">&times;</span>
+    <h2>Settings</h2>
+    <label><input type="checkbox"> Pause between calls</label>
+    <label><input type="checkbox"> Hang up on voicemail detect</label>
+    <label><input type="checkbox"> Enable double calls</label>
+    <!-- Add more settings as needed -->
+</div>
+
+<!-- AI Support Chat Pop-up -->
+<div class="popup" id="aiSupportPopup">
+    <span class="close" id="closeAiSupportPopup">&times;</span>
+    <h2>AI Support</h2>
+    <div class="chat" id="chatContainer">
+        <!-- AI and Agent chat bubbles will be added here -->
+    </div>
+    <input type="text" id="aiInput" placeholder="Type your message...">
+    <input type="submit" value="Send" id="sendAiMessage">
+</div>
+
+<!-- JavaScript for Theme Toggle, Pop-ups, and Call Control Logic -->
+<script>
+    const themeToggle = document.querySelector('.theme-toggle');
+    const body = document.body;
+    const dialButton = document.getElementById('dialButton');
+    const dialOptions = document.getElementById('dialOptions');
+    const callControlButtons = document.querySelectorAll('.call-controls button');
+    const scriptButton = document.getElementById('scriptButton');
+    const dispositionButton = document.getElementById('dispositionButton');
+    const scriptPopup = document.getElementById('scriptPopup');
+    const dispositionPopup = document.getElementById('dispositionPopup');
+    const closeScriptPopup = document.getElementById('closeScriptPopup');
+    const closeDispositionPopup = document.getElementById('closeDispositionPopup');
+    const settingsButton = document.getElementById('settingsButton');
+    const settingsPopup = document.getElementById('settingsPopup');
+    const closeSettingsPopup = document.getElementById('closeSettingsPopup');
+    const chatbotWidget = document.getElementById('chatbotWidget');
+    const aiSupportPopup = document.getElementById('aiSupportPopup');
+    const closeAiSupportPopup = document.getElementById('closeAiSupportPopup');
+    const dialPad = document.getElementById('dialPad');
+    const dialerTab = document.getElementById('dialerTab');
+    const smartPanelTab = document.getElementById('smartPanelTab');
+    const contactsTab = document.getElementById('contactsTab');
+    const multiChannelTab = document.getElementById('multiChannelTab');
+    const aiInput = document.getElementById('aiInput');
+    const sendAiMessage = document.getElementById('sendAiMessage');
+    const chatContainer = document.getElementById('chatContainer');
+
+    // Theme Toggle Functionality
+    themeToggle.addEventListener('click', () => {
+        body.classList.toggle('dark-theme');
+        themeToggle.textContent = body.classList.contains('dark-theme') ? 'Light Mode' : 'Dark Mode';
+    });
+
+    // Show Dial Options on Dial Button Click
+    dialButton.addEventListener('click', () => {
+        dialOptions.style.display = dialOptions.style.display === 'block' ? 'none' : 'block';
+    });
+
+    // Select Dial Option
+    dialOptions.querySelectorAll('li').forEach(option => {
+        option.addEventListener('click', () => {
+            alert(`Connecting via ${option.textContent}...`);
+            dialOptions.style.display = 'none';
+        });
+    });
+
+    // Ensure Only One Call Control Button is Active
+    callControlButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            callControlButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+        });
+    });
+
+    // Show Script Pop-up
+    scriptButton.addEventListener('click', () => {
+        scriptPopup.style.display = 'block';
+    });
+
+    // Show Disposition Pop-up
+    dispositionButton.addEventListener('click', () => {
+        dispositionPopup.style.display = 'block';
+    });
+
+    // Close Pop-ups
+    closeScriptPopup.addEventListener('click', () => {
+        scriptPopup.style.display = 'none';
+    });
+
+    closeDispositionPopup.addEventListener('click', () => {
+        dispositionPopup.style.display = 'none';
+    });
+
+    // Show Settings Pop-up
+    settingsButton.addEventListener('click', () => {
+        settingsPopup.style.display = 'block';
+    });
+
+    // Close Settings Pop-up
+    closeSettingsPopup.addEventListener('click', () => {
+        settingsPopup.style.display = 'none';
+    });
+
+    // Show AI Support Pop-up
+    chatbotWidget.addEventListener('click', () => {
+        aiSupportPopup.style.display = 'block';
+    });
+
+    // Close AI Support Pop-up
+    closeAiSupportPopup.addEventListener('click', () => {
+        aiSupportPopup.style.display = 'none';
+    });
+
+    // AI Chat Functionality
+    sendAiMessage.addEventListener('click', () => {
+        const message = aiInput.value.trim();
+        if (message) {
+            const agentMessage = document.createElement('p');
+            agentMessage.className = 'agent';
+            agentMessage.textContent = message;
+            chatContainer.appendChild(agentMessage);
+            aiInput.value = '';
+
+            // Simulate AI response after a delay
+            setTimeout(() => {
+                const aiMessage = document.createElement('p');
+                aiMessage.className = 'ai';
+                aiMessage.textContent = 'AI support: How can I assist with this call?';
+                chatContainer.appendChild(aiMessage);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 2000);
+        }
+    });
+
+    // Switch between tabs in Bottom Navigation
+    dialerTab.addEventListener('click', () => {
+        dialPad.style.display = 'block';
+        dialerTab.classList.add('active');
+        smartPanelTab.classList.remove('active');
+        contactsTab.classList.remove('active');
+        multiChannelTab.classList.remove('active');
+    });
+
+    smartPanelTab.addEventListener('click', () => {
+        dialPad.style.display = 'none';
+        smartPanelTab.classList.add('active');
+        dialerTab.classList.remove('active');
+        contactsTab.classList.remove('active');
+        multiChannelTab.classList.remove('active');
+    });
+
+    contactsTab.addEventListener('click', () => {
+        dialPad.style.display = 'none';
+        contactsTab.classList.add('active');
+        dialerTab.classList.remove('active');
+        smartPanelTab.classList.remove('active');
+        multiChannelTab.classList.remove('active');
+    });
+
+    multiChannelTab.addEventListener('click', () => {
+        dialPad.style.display = 'none';
+        multiChannelTab.classList.add('active');
+        dialerTab.classList.remove('active');
+        smartPanelTab.classList.remove('active');
+        contactsTab.classList.remove('active');
+    });
+</script>
+   </body>
+</html>
